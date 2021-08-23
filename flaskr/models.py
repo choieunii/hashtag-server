@@ -7,7 +7,7 @@ class Product(db.Model) :
     image = db.Column(db.String(128))
     price = db.Column(db.Integer, nullable=False)
     ptype = db.Column(db.String(128), nullable=False)
-    create_date = db.column(db.DateTime())
+    create_date = db.Column(db.DateTime())
     expirt_date = db.Column(db.String(128))
     information = db.Column(db.Text())
 
