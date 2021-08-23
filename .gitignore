@@ -1,0 +1,12 @@
+venv/
+
+*.pyc
+__pycache__/
+flaskr/__pycache__/
+flaskr/yolo/yolov4-obj_best.weights
+flaskr/yolo/yolov4-obj_final.weights
+flaskr/yolo/yolov4-obj_last.weights
+flaskr/yolo/yolov4-obj.cfg
+
+migrations/
+.env
