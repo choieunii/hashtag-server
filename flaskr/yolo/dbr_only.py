@@ -121,7 +121,7 @@ def main(img):
     # elapsed_ms = (time.monotonic() - start_time) * 1000
     # print('postprocess in %.1fms' % (elapsed_ms))
 
-    cv.imshow('QR Detection', frame)
+    #cv.imshow('QR Detection', frame)
     cv.waitKey()
     return decode_data
 
