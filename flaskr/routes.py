@@ -15,32 +15,47 @@ mail = Mail(app)
 def test():
     return 'test'
 
-@bp.route('/upload', methods=['POST'])
+@bp.route('/getItem', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
-        print(request.files)
-        img_file = request.files['file']
+        img_file = request.files['requestFile']
         codes = dbr_only.main(img_file)
+        
         # YOLO 테스트 시
         #codes = yolo_dbr.main(img_file)
 
+        dic = {}
         data = []
 
         for code in codes:
-            print(code + " code ")
+            if code in dic:
+                dic[code] +=1
+            else:
+                dic[code] = 1           
+
+        print(dic)
+        for code in dic:
             code_info = Barcode.query.filter(Barcode.cnum == code).first()
-            print(code_info)
             if code_info is not None:
                 pro_info = Product.query.filter(Product.id == code_info.product_id).first()
-                
                 if pro_info is not None:
-                    data.append(pro_info.toDict())
+                    product = {}
+                    product['name'] = pro_info.name
+                    product['price'] = pro_info.price
+                    product['count'] = dic[code]
+                    data.append(product)
     
     return jsonify(data)
 
-@bp.route('/send-mail', methods=['POST'])
+@bp.route('/mail', methods=['POST'])
 def send_mail():
-    msg = Message('Hello', sender= 'code110100@gmail.com', recipients=['ghk784@naver.com'])
-    msg.body = '결제가 완료되었습니다'
-    mail.send(msg)
-    return 'Sent'
+    if request.method == 'POST':
+        email = request.form.get("email")
+        item = request.form.get("item")
+
+        msg = Message('Hello', sender= 'code110100@gmail.com', recipients=[email])
+        msg.body = '결제가 완료되었습니다'
+        mail.send(msg)
+        success = {'success': 'true'}
+
+    return jsonify(success)

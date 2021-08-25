@@ -134,7 +134,7 @@ def main(img):
     # resizeHeight = int(0.5 * imageHeight) 
     # resizeWidth = int(0.5 * imageWidth) 
     # resizeFrame = cv.resize(frame, (resizeHeight, resizeWidth), interpolation = cv.INTER_CUBIC)
-    cv.imshow('QR Detection', frame) #imshow
+    #cv.imshow('QR Detection', frame) #imshow
     cv.waitKey()
     return decode_data
 
