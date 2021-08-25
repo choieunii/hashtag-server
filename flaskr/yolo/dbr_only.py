@@ -41,10 +41,7 @@ def main(img):
 
 
     # Load an frame
-    in_memory_file = io.BytesIO()
-    img.save(in_memory_file)
-    data = np.fromstring(in_memory_file.getvalue(),dtype=np.uint8)
-        
+    data = np.fromfile(img, np.uint8)
     frame = cv.imdecode(data,cv.IMREAD_UNCHANGED)# 사진 읽어옴
     #frame = cv.imread("test/qrbarcode.PNG") # 사진 읽어옴
     decodeframe(frame)

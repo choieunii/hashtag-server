@@ -2,6 +2,7 @@ from flask import Blueprint, Flask, request, jsonify
 from . import create_app
 from .yolo import yolo_dbr
 from .yolo import dbr_only
+from .yolo import yolo_decode
 from .models import *
 from sqlalchemy.ext.declarative import DeclarativeMeta
 from flask_mail import Mail, Message
@@ -19,10 +20,10 @@ def test():
 def upload_file():
     if request.method == 'POST':
         img_file = request.files['requestFile']
-        codes = dbr_only.main(img_file)
+        #codes = yolo_dbr.main(img_file)
         
         # YOLO 테스트 시
-        #codes = yolo_dbr.main(img_file)
+        codes = yolo_decode.main(img_file)
 
         dic = {}
         data = []

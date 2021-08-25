@@ -46,9 +46,7 @@ def main(img):
 
 
     # Load an image
-    in_memory_file = io.BytesIO()
-    img.save(in_memory_file)
-    data = np.fromstring(in_memory_file.getvalue(),dtype=np.uint8)
+    data = np.fromfile(img, np.uint8)
         
     frame = cv.imdecode(data,cv.IMREAD_UNCHANGED)# 사진 읽어옴
     #frame = cv.imread("test/qrbarcode.PNG") # 사진 읽어옴
@@ -56,12 +54,9 @@ def main(img):
 
     # Load class names and YOLOv3-tiny model
     classes = open('code.names').read().strip().split('\n')
-    net = cv.dnn.readNet("yolov4-obj_last.weights", "yolov4-obj.cfg")
-    net.setPreferableBackend(cv.dnn.DNN_BACKEND_CUDA)
-    net.setPreferableTarget(cv.dnn.DNN_TARGET_CUDA_FP16)
-
-    model = cv.dnn_DetectionModel(net)
-    model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
+    net = cv.dnn.readNet('yolov4-obj_last.weights', 'yolov4-obj.cfg')
+    net.setPreferableBackend(cv.dnn.DNN_BACKEND_OPENCV)
+    net.setPreferableTarget(cv.dnn.DNN_TARGET_CPU) # DNN_TARGET_OPENCL DNN_TARGET_CPU DNN_TARGET_CUDA
 
     start_time = time.monotonic()
     # Convert frame to blob
@@ -90,12 +85,9 @@ def main(img):
                     boxes.append([left, top, int(width), int(height)])
 
         indices = cv.dnn.NMSBoxes(boxes, confidences, threshold, threshold - 0.1)
-        print(indices)
         for i in indices:
-            print(i)
             i = i[0]
             box = boxes[i]
-            print(box)
             left = box[0]
             top = box[1]
             width = box[2]
