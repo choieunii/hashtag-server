@@ -14,13 +14,15 @@ class EuclideanDistTracker:
         # self.id_count = 0
         # 0 : barcode/ 1 : product
         self.reader = BarcodeReader()
-
         license_key = "t0072fQAAAAgRqqnjS+UaXWzx01E7MLbP+BWb0H4C7quLjMqPzDLDzoI2zN0noPeAOS/bVXJCXiX4UBYppedid9AUQ/ZzawqynBt9"
         self.reader.init_license(license_key)
         self.decode_data = []
         self.class_ids = {0: 0, 1: 0}
 
-    def isInside(self, barcode, product):
+    def get_all_product(self):
+        return self.all_product_info
+
+    def is_inside(self, barcode, product):
         codex, codey, codew, codeh = barcode
         prox, proy, prow, proh = product
 
@@ -53,121 +55,114 @@ class EuclideanDistTracker:
 
         return None
 
-    def update(self, classes, bboxes, frame):
+    def update_info(self, class_id, frame, bbox, objects_bbs_cids, in_out):
+        x, y, w, h = bbox
+        if class_id[0] == 0:  # 바코드 일때
+            result = self.decodeframe(frame, x, y, (x+w), (y+h))
+            barcode_text = " "
+            if result is not None:  # 결과가 있을때
+                barcode_text = result[0].barcode_text
+                self.all_barcode_info[(class_id)] = (x, y, w, h, barcode_text)
+
+        else:  # 상품일때
+            flag = False
+            barcode_text = " "
+            for barcode in self.all_barcode_info:
+                barx, bary, barw, barh, info = self.all_barcode_info[barcode]
+                if self.is_inside((barx, bary, barw, barh), (x, y, w, h)):
+                    self.all_product_info[(class_id)] = (
+                        (x, y, w, h), info)
+                    flag = True
+                    barcode_text = info
+            if(not flag):
+                self.all_product_info[(class_id)] = (
+                    x, y, w, h)
+
+        return x, y, w, h, class_id, in_out, barcode_text
+
+    def update(self, classes, bboxes, frame, line):
         # object의 bbox와 class_id정보
         objects_bbs_cids = []
+        x1, x2, x3, y1, y2, y3 = line
+        a = (y2-y1)//x1
+        b = y1
+        c = y2
+        d = (y3-y2)//(x3-x2)
+        f = y2 - ((y3-y2)*x2)//(x3-x2)
+
+        # 밖에 있는 객체 리스트에서 삭제
+        if self.all_center_points != None:
+            for class_id, bbox_in_out in list(self.all_center_points.items()):
+                if bbox_in_out[4] == False:
+                    print(f"before {self.all_center_points}")
+                    del self.all_center_points[class_id]
+                    print(f"after{self.all_center_points}")
 
         # bbox = [x,y,w,h] 정보 포함
         # one_class = 0 or 1
         for one_class, bbox in zip(classes, bboxes):
+
             x, y, w, h = bbox
+            x2, y2 = x+w, y+h
             # 중심 x,y값 계산
             cx = (x+x+w)//2
             cy = (y+y+h)//2
             one_class = int(one_class)
 
+            in_out = True  # in : True, out : False
+
+            if cx < x1 and cy < a*cx+b:
+                in_out = False
+            elif x1 < cx < x2 and cy < c:
+                in_out = False
+            elif x2 < cx < x3 and cy < d*cx+f:
+                in_out = False
+            else:
+                pass
+
             # 이전에 이미 인식된 객체인지 확인
             same_object = False
-            # items() : (key, value)반환
-            # 모든 이미 존재하는 객체와 거리를 계산해
-            # center_points = {(int(class),id):(cx, cy),...}
-            # class_id = (class,id) / pt = (cx, cy)
-            for class_id, pt in self.all_center_points.items():
+
+            for class_id, bbox_tmp in self.all_center_points.items():
+                x_tmp, y_tmp, w_tmp, h_tmp, in_out_tmp, barcode_tmp = bbox_tmp
+                x2_tmp, y2_tmp = x_tmp+w_tmp, y_tmp+h_tmp
+                cx_tmp = (x_tmp+x_tmp+w_tmp)//2
+                cy_tmp = (y_tmp+y_tmp+h_tmp)//2
                 # 같은 객체인 경우 거리 측정 / 다른 객체면 pass
                 if one_class == class_id[0]:
                     # dist : 현재 객체의 중심점과 이전 프레임에 인식된 (모든)객체의 중심점 직선 거리
-                    dist = math.hypot(cx-pt[0], cy-pt[1])
+                    dist = math.hypot(cx-cx_tmp, cy-cy_tmp)
+                    area = abs(w*h-w_tmp*h_tmp)  # 넓이 비교 값
+                    dot1 = math.hypot(x-x_tmp, y-y_tmp)
+                    dot2 = math.hypot(x2-x2_tmp, y2-y2_tmp)
+                    dot = abs(dot1-dot2)
 
                     # 거리가 25이하이면 id 객체 중심 위치 업데이트
-                    if dist < 100:
-                        self.all_center_points[class_id] = (x, y, w, h)
-                        if class_id[0] == 0:
-                            result = self.decodeframe(
-                                frame, x, y, (x+w), (y+h))
-                            if result is not None:
-                                self.all_barcode_info[(class_id)] = (
-                                    x, y, w, h, result[0].barcode_text)
-                                objects_bbs_cids.append(
-                                    [x, y, w, h, class_id, result[0].barcode_text])
-                            else:
-                                objects_bbs_cids.append(
-                                    [x, y, w, h, class_id, " "])
-
-                        else:
-                            flag = False
-                            for barcode in self.all_barcode_info:
-                                barx, bary, barw, barh, info = self.all_barcode_info[barcode]
-                                if self.isInside((barx, bary, barw, barh), (x, y, w, h)):
-                                    self.all_product_info[(class_id)] = (
-                                        (x, y, w, h), info)
-                                    flag = True
-                                    objects_bbs_cids.append(
-                                        [x, y, w, h, class_id, info])
-                            if(not flag):
-                                self.all_product_info[(class_id)] = (
-                                    x, y, w, h)
-                                objects_bbs_cids.append(
-                                    [x, y, w, h, class_id, " "])
-
+                    # print(
+                    #     f"dist = {dist}, area = {area}, dot1 = {dot1}, dot2 = {dot2}")
+                    if dist < 100 and area < 5000 and dot < 500:
+                        new_class_id = class_id
+                        x, y, w, h, class_id, in_out, barcode = self.update_info(
+                            class_id, frame, bbox, objects_bbs_cids, in_out)
+                        self.all_center_points[class_id] = (
+                            x, y, w, h, in_out, barcode)
+                        objects_bbs_cids.append(
+                            [x, y, w, h, class_id, in_out, barcode])
                         # 기존에 있던 객체임을 표시
                         same_object = True
                         break
-                # else class가 다를때 처리:
-                # 거리, 위치? 바코드 center값이 상품 영역 안에 있으면 연관
-                # {(class,id):(cx, cy)} > {(class,id):(bbox(x,y,w,h), decoding한 barcode정보)}
-                # barcode/product 모두 인식 ID할당 정보를 계속 축적 둘다 트래킹
-                # product에 barcode 정보를 저장하게 되면, barcode에 대한 트래킹 계속 해야되는 걸까?
-                # 왜냐면 barcode 인식되서 디코딩이 되서 product에 저장이
-                # 위에서 비교를 할때는 barcode 정보는 사용하지 않아.
-                # 해당 바코드 정보가 product에 할당이 되는 경우에 그 바코드 정보는 따로 변수에 저장 안해도 될것 같음.
-
-            # 넣고 빼고 barcode에 대한 처리 안해줌.
-            # {(class,id):(bbox(x,y,w,h), decoding한 barcode정보)}
-            # center값 계산
-            # (0~x1) - f1 / (x1~x2) - f2/ (x2~x3) - f3 안/밖 판단
-            # product class에 대해서만 처리
 
             # 새로운 객체가 감지된 경우
             if same_object is False:
                 new_class_id = (one_class, self.class_ids[one_class])
-                self.all_center_points[(new_class_id)] = (x, y, w, h)
-                if new_class_id[0] == 0:
-                    result = self.decodeframe(frame, x, y, (x+w), (y+h))
-                    if result is not None:
-                        self.all_barcode_info[(new_class_id)] = (
-                            x, y, w, h, result[0].barcode_text)
-                        objects_bbs_cids.append(
-                            [x, y, w, h, new_class_id, result[0].barcode_text])
-                    else:
-                        objects_bbs_cids.append(
-                            [x, y, w, h, new_class_id, " "])
-                else:
-                    flag = False
-                    for barcode in self.all_barcode_info:
-                        barx, bary, barw, barh, info = self.all_barcode_info[barcode]
-                        if self.isInside((barx, bary, barw, barh), (x, y, w, h)):
-                            self.all_product_info[(new_class_id)] = (
-                                (x, y, w, h), info)
-                            objects_bbs_cids.append(
-                                [x, y, w, h, new_class_id, info])
-                            flag = True
-                    if(not flag):
-                        self.all_product_info[(new_class_id)] = (
-                            x, y, w, h)
-                        objects_bbs_cids.append(
-                            [x, y, w, h, new_class_id, " "])
+                x, y, w, h, class_id, in_out, barcode = self.update_info(
+                    new_class_id, frame, bbox, objects_bbs_cids, in_out)
+                self.all_center_points[class_id] = (
+                    x, y, w, h, in_out, barcode)
+                objects_bbs_cids.append(
+                    [x, y, w, h, class_id, in_out, barcode])
                 self.class_ids[one_class] += 1
 
+        print(objects_bbs_cids)
         print(self.all_product_info)
-        print(self.all_barcode_info)
-        # 없어진 객체 제거 (최신화)
-        # new_center_points = {}
-        # for object_bb_cid in objects_bbs_cids:
-        #     _, _, _, _, object_cid = object_bb_cid
-        #     # x, y, w, h, object_id = object_bb_id
-        #     center = self.center_points[object_cid]
-        #     new_center_points[object_cid] = center
-        # self.center_points = new_center_points.copy()
-
-        # objects_bbs_cids = []
         return objects_bbs_cids
