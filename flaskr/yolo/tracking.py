@@ -18,8 +18,8 @@ def main(img):
     count = 0
 
     net = cv2.dnn.readNet("yolov4-obj_last.weights", "yolov4-obj.cfg")
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
-    # net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
+    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
     # make darknet model
     model = cv2.dnn_DetectionModel(net)
     model.setInputParams(size=(416, 416), scale=1/255, swapRB=True)
@@ -67,8 +67,8 @@ def main(img):
         frame = cv2.line(frame, (x1, y2), (x2, y2), (255, 255, 0), 3)
         frame = cv2.line(frame, (x2, y2), (x3, y3), (255, 255, 0), 3)
 
-    cv2.imshow("detections", frame)
-    key = cv2.waitKey()
+    #cv2.imshow("detections", frame)
+    #key = cv2.waitKey()
     return barcode_data
 
     images.append(frame)
