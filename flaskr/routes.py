@@ -112,7 +112,8 @@ def send_mail():
         qrImg, qrImgArr = make_qr.main(item)
         msg.attach("qrcode.png", "image/png", qrImgArr)
         mail.send(msg)
-        success = {'success': 'true'}
+        db.session.query(CartList).delete()
+        db.session.commit()
 
     return send_file("img/qrcode.png", mimetype='image/jpg')
 
