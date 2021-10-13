@@ -14,7 +14,7 @@ class EuclideanDistTracker:
         # self.id_count = 0
         # 0 : barcode/ 1 : product
         self.reader = BarcodeReader()
-        license_key = "t0072fQAAAAgRqqnjS+UaXWzx01E7MLbP+BWb0H4C7quLjMqPzDLDzoI2zN0noPeAOS/bVXJCXiX4UBYppedid9AUQ/ZzawqynBt9"
+        license_key = "t0070fQAAABs5UBeIoZauESQexgFMfJvzWomYk0QhLYKs8n7DyHnxDMjTCXoEhv/182aGd2vlkDEJEV6J4/slF2Y57SNKhyUbgA=="
         self.reader.init_license(license_key)
         self.decode_data = []
         self.class_ids = {0: 0, 1: 0}
