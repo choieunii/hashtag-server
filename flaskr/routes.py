@@ -1,4 +1,5 @@
-from flask import Blueprint, Flask, request, jsonify, send_file
+from flask import Blueprint, Flask, redirect, request, jsonify, send_file
+import requests
 from . import create_app
 from .yolo import tracking
 from .yolo import decoding
@@ -77,9 +78,9 @@ def get_cart_feed():
             dic[code] += 1
         else:
             dic[code] = 1
-
+    print(codes)
     for code in dic:
-        code_info = Barcode.query.filter(Barcode.cnum == code).first()
+        code_info = Barcode.query.filter(Barcode.cnum == str(code)).first()
         if code_info is None:
             break
 
@@ -92,6 +93,7 @@ def get_cart_feed():
         product = {"code": code, "price": pro_info.price,
                    "count": dic[code], "name": pro_info.name}
         carts.append(product)
+        print(product)
 
     cart_feed = {
         "feeds": feeds,
