@@ -8,18 +8,21 @@ from . import config
 db = SQLAlchemy()
 migrate = Migrate()
 
+
 def create_app():
     app = Flask(__name__)
 
     mail = Mail(app)
 
     app.config.from_object(config)
-    
+
     db.init_app(app)
     migrate.init_app(app, db)
 
     from . import models
     from . import routes
+    from . import oauth
     app.register_blueprint(routes.bp)
+    app.register_blueprint(oauth.bp)
 
     return app
