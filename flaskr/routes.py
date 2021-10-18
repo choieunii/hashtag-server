@@ -19,10 +19,40 @@ def test():
     return 'test'
 
 
-@bp.route('/getItem', methods=['POST'])
+@bp.route('/image', methods=['POST'])
+def check_img():
+    if request.method == 'POST':
+        img_file = request.files['file']
+        codes = decoding.main(img_file)
+
+        dic = {}
+        data = []
+
+        for code in codes:
+            if code in dic:
+                dic[code] += 1
+            else:
+                dic[code] = 1
+
+        for code in dic:
+            code_info = Barcode.query.filter(Barcode.cnum == code).first()
+            print(code_info)
+            if code_info is not None:
+                pro_info = Product.query.filter(
+                    Product.id == code_info.product_id).first()
+
+                if pro_info is not None:
+                    product = {"name": pro_info.name, "price": pro_info.price,
+                               "count": dic[code]}
+                    data.append(product)
+
+    return jsonify(data)
+
+
+@bp.route('/traking', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
-        img_file = request.files['requestFile']
+        img_file = request.files['file']
         codes = tracking.main(img_file)
 
         dic = {}
