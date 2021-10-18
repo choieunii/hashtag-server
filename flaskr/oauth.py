@@ -16,7 +16,7 @@ mail = Mail(app)
 def kakao_login_callback():
     code = request.args.get("code")
     client_id = os.getenv('CLIENT_ID')
-    redirect_uri = "http://localhost:5000/oauth"
+    redirect_uri = request.host_url + "/oauth"
     token_request = requests.get(
         f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
     )
@@ -37,9 +37,48 @@ def kakao_login_callback():
 @bp.route('/kakao')
 def kakao_login():
     client_id = os.getenv('CLIENT_ID')
-    redirect_uri = "http://localhost:5000/oauth"
+    redirect_uri = request.host_url + "/oauth"
     kakao_oauthurl = f"https://kauth.kakao.com/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
     return redirect(kakao_oauthurl)
+
+
+@bp.route('/login', methods=['POST'])
+def login():
+    if request.method == 'POST':
+        id = request.form.get("id")
+        password = request.form.get("password")
+
+        user = User.query.filter(
+            User.id == id, User.password == password).first()
+
+        if user is None:
+            return jsonify({"success": "false"})
+
+        info = {"name": user.name, "email": user.email}
+
+    return jsonify(info)
+
+
+@bp.route('/register', methods=['POST'])
+def register():
+    if request.method == 'POST':
+        id = request.form.get("id")
+        password = request.form.get("password")
+        name = request.form.get("name")
+        email = request.form.get("email")
+        phone = request.form.get("phone")
+
+        userid = User.query.filter(User.id == id).first()
+
+        if userid is not None:
+            return jsonify({"success": "false"})
+
+        user = User(id=id, password=password, name=name,
+                    email=email, phone=phone)
+        db.session.add(user)
+        db.session.commit()
+
+    return jsonify(user.toDict())
 
 
 @bp.route('/mail', methods=['POST'])
@@ -106,4 +145,4 @@ def send_kakaotalk():
         "https://kapi.kakao.com/v2/api/talk/memo/default/send", headers=header, data=body
     )
     print(user_info.json())
-    return "전송 완료"
+    return jsonify({"success": "true"})
