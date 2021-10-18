@@ -28,7 +28,7 @@ def kakao_login_callback():
 
     user_json = user_info.json().get('kakao_account')
     user = {}
-    user['nickname'] = user_json.get('profile').get('nickname')
+    user['name'] = user_json.get('profile').get('nickname')
     user['email'] = user_json.get('email')
     user['token'] = token_json.get('access_token')
     return json.dumps(user, ensure_ascii=False).encode('utf8')

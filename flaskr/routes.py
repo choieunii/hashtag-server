@@ -22,7 +22,7 @@ def test():
 @bp.route('/image', methods=['POST'])
 def check_img():
     if request.method == 'POST':
-        img_file = request.files['file']
+        img_file = request.files['img']
         codes = decoding.main(img_file)
 
         dic = {}
@@ -49,10 +49,10 @@ def check_img():
     return jsonify(data)
 
 
-@bp.route('/traking', methods=['POST'])
+@bp.route('/tracking', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
-        img_file = request.files['file']
+        img_file = request.files['img']
         codes = tracking.main(img_file)
 
         dic = {}
