@@ -52,9 +52,9 @@ def login():
             User.id == id, User.password == password).first()
 
         if user is None:
-            return jsonify({"success": "false"})
-
-        info = {"name": user.name, "email": user.email}
+            info = {"name": "", "email": ""}
+        else:
+            info = {"name": user.name, "email": user.email}
 
     return jsonify(info)
 
@@ -70,13 +70,14 @@ def register():
 
         userid = User.query.filter(User.id == id).first()
 
-        if userid is not None:
-            return jsonify({"success": "false"})
-
-        user = User(id=id, password=password, name=name,
-                    email=email, phone=phone)
-        db.session.add(user)
-        db.session.commit()
+        if userid is None:
+            user = User(id=id, password=password, name=name,
+                        email=email, phone=phone)
+            db.session.add(user)
+            db.session.commit()
+        else:
+            user = User(id=id, password="", name="",
+                        email="", phone="")
 
     return jsonify(user.toDict())
 
@@ -103,10 +104,18 @@ def send_mail():
 @bp.route('/message', methods=['POST'])
 def send_kakaotalk():
     token = request.form.get("token")
+    item = request.form.get("item")
     header = {"Content-Type": "application/x-www-form-urlencoded",
               "Authorization": "Bearer " + str(token)}
 
-    dummy = {
+    arr = item.split()
+    items = []
+
+    for i in range(0, int(len(arr)-2), 2):
+        ele = {"item": arr[i], "item_op": arr[i+1]}
+        items.append(ele)
+
+    message = {
         "object_type": "feed",
         "content": {
             "title": "결제 내역 영수증",
@@ -121,26 +130,13 @@ def send_kakaotalk():
             }
         },
         "item_content": {
-            "items": [
-                {
-                    "item": "꼬북칩",
-                    "item_op": "1000원"
-                },
-                {
-                    "item": "프링글스",
-                    "item_op": "2000원"
-                },
-                {
-                    "item": "초코파이",
-                    "item_op": "3000원"
-                }
-            ],
+            "items": items,
             "sum": "Total",
-            "sum_op": "15000원"
+            "sum_op": arr[len(arr)-1]
         }
     }
 
-    body = {"template_object": json.dumps(dummy)}
+    body = {"template_object": json.dumps(message)}
     user_info = requests.post(
         "https://kapi.kakao.com/v2/api/talk/memo/default/send", headers=header, data=body
     )
