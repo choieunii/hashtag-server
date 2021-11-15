@@ -52,9 +52,9 @@ def login():
             User.id == id, User.password == password).first()
 
         if user is None:
-            info = {"name": "", "email": ""}
+            info = {"name": "", "email": "", "success": "false"}
         else:
-            info = {"name": user.name, "email": user.email}
+            info = {"name": user.name, "email": user.email, "success": "true"}
 
     return jsonify(info)
 
@@ -69,36 +69,22 @@ def register():
         phone = request.form.get("phone")
 
         userid = User.query.filter(User.id == id).first()
+        success = "false"
 
         if userid is None:
             user = User(id=id, password=password, name=name,
                         email=email, phone=phone)
+            success = "true"
             db.session.add(user)
             db.session.commit()
         else:
-            user = User(id=id, password="", name="",
+            user = User(id="", password="", name="",
                         email="", phone="")
 
-    return jsonify(user.toDict())
+        user = user.toDict()
+        user["success"] = success
 
-
-@bp.route('/mail', methods=['POST'])
-def send_mail():
-    if request.method == 'POST':
-        email = request.form.get("email")
-        item = request.form.get("item")
-
-        msg = Message('HashTag 상품 결제 내역', sender='결제완료',
-                      recipients=[email])
-        msg.body = '결제가 완료되었습니다' + item
-        qrImg, qrImgArr = make_qr.main(item)
-        msg.attach("qrcode.png", "image/png", qrImgArr)
-        mail.send(msg)
-
-        db.session.query(CartList).delete()
-        db.session.commit()
-
-    return send_file("img/qrcode.png", mimetype='image/jpg')
+    return jsonify(user)
 
 
 @bp.route('/message', methods=['POST'])
@@ -141,4 +127,4 @@ def send_kakaotalk():
         "https://kapi.kakao.com/v2/api/talk/memo/default/send", headers=header, data=body
     )
     print(user_info.json())
-    return jsonify({"success": "true"})
+    return jsonify(user_info.json())

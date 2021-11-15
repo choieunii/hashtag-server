@@ -13,7 +13,7 @@ def main(img):
     # Initialize Dynamsoft Barcode Reader
     reader = BarcodeReader()
     # Apply for a trial license: https://www.dynamsoft.com/customer/license/trialLicense
-    license_key = "t0070fQAAABs5UBeIoZauESQexgFMfJvzWomYk0QhLYKs8n7DyHnxDMjTCXoEhv/182aGd2vlkDEJEV6J4/slF2Y57SNKhyUbgA=="
+    license_key = "t0070fQAAAGbyNqWdbXGQuG/k3sw/lDS5BzrZbGVFI61KIVV9WEj0wPV/pgMiFVBM/+4clrLaRbvjFV1NfhjW0g3NxklHJpMbhA=="
     reader.init_license(license_key)
     decode_data = []
 
@@ -77,12 +77,12 @@ def main(img):
     for (classid, score, box) in zip(classes, scores, boxes):
         color = COLORS[int(classid) % len(COLORS)]
         print(classid)
-        label = "%s : %f" % (class_names[classid[0]], score)
+        label = "%s : %f" % (class_names[classid], score)
         left = box[0]
         top = box[1]
         width = box[2]
         height = box[3]
-        if classid[0] == 0:
+        if classid == 0:
             result = decodeframe(frame, left, top, left + width, top + height)
             cv2.rectangle(frame, (left, top),
                           (left + width, top + height), (0, 0, 255))
@@ -90,7 +90,7 @@ def main(img):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
 
         if not result is None:
-            label = '%s' % (result[0].barcode_text)
+            label = f"(result[0].barcode_text)"
             print(result[0].barcode_text)
             cv2.putText(frame, label, (left, top - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0))
